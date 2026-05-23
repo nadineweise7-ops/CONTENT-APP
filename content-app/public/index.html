@@ -1,0 +1,524 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Content Creator App – Positionierungs-System</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,700;1,400&family=DM+Sans:wght@300;400;500;600&display=swap');
+
+  :root {
+    --gold: #C9A96E;
+    --gold-light: #E8D5B0;
+    --dark: #1A1410;
+    --dark-mid: #2C2218;
+    --dark-light: #3D3028;
+    --cream: #F5EFE6;
+    --cream-mid: #EDE4D5;
+    --mint: #7BBFB5;
+    --rose: #D4848A;
+    --lavender: #A89BC2;
+    --text: #1A1410;
+    --text-light: #6B5C4E;
+    --white: #FFFFFF;
+    --radius: 12px;
+    --shadow: 0 4px 24px rgba(26,20,16,0.12);
+    --shadow-lg: 0 12px 48px rgba(26,20,16,0.18);
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: 'DM Sans', sans-serif; background: var(--cream); color: var(--text); min-height: 100vh; }
+
+  .app-header {
+    background: var(--dark); padding: 28px 40px;
+    display: flex; align-items: center; gap: 16px;
+  }
+  .logo-mark {
+    width: 44px; height: 44px; border: 2px solid var(--gold);
+    border-radius: 50%; display: flex; align-items: center; justify-content: center;
+    font-family: 'Playfair Display', serif; color: var(--gold); font-size: 20px; font-style: italic;
+  }
+  .app-title { font-family: 'Playfair Display', serif; color: var(--cream); font-size: 22px; font-weight: 400; }
+  .app-subtitle { color: var(--gold); font-size: 12px; letter-spacing: 2px; text-transform: uppercase; margin-top: 2px; }
+
+  .app-container { max-width: 1100px; margin: 0 auto; padding: 40px 24px 80px; }
+
+  .steps-bar {
+    display: flex; margin-bottom: 48px; background: var(--white);
+    border-radius: var(--radius); overflow: hidden; box-shadow: var(--shadow);
+  }
+  .step-btn {
+    flex: 1; padding: 16px 12px; border: none; background: transparent; cursor: pointer;
+    text-align: center; font-family: 'DM Sans', sans-serif; font-size: 12px; font-weight: 500;
+    letter-spacing: 1px; text-transform: uppercase; color: var(--text-light); transition: all 0.3s ease;
+    border-right: 1px solid var(--cream-mid);
+  }
+  .step-btn:last-child { border-right: none; }
+  .step-btn.active { background: var(--dark); color: var(--gold); }
+  .step-btn.done { background: var(--cream-mid); color: var(--text); }
+  .step-num { display: block; font-size: 20px; font-family: 'Playfair Display', serif; font-weight: 700; margin-bottom: 4px; color: inherit; }
+  .step-btn.active .step-num { color: var(--gold); }
+
+  .panel { display: none; }
+  .panel.active { display: block; animation: fadeIn 0.4s ease; }
+  @keyframes fadeIn { from { opacity: 0; transform: translateY(12px); } to { opacity: 1; transform: translateY(0); } }
+
+  .panel-header { margin-bottom: 32px; }
+  .panel-eyebrow { font-size: 11px; letter-spacing: 3px; text-transform: uppercase; color: var(--gold); font-weight: 600; margin-bottom: 8px; }
+  .panel-title { font-family: 'Playfair Display', serif; font-size: 32px; color: var(--dark); line-height: 1.2; }
+  .panel-desc { color: var(--text-light); font-size: 15px; margin-top: 10px; max-width: 600px; line-height: 1.6; }
+
+  .form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+  .form-group { display: flex; flex-direction: column; gap: 8px; }
+  .form-group.full { grid-column: 1 / -1; }
+  label { font-size: 12px; font-weight: 600; letter-spacing: 1px; text-transform: uppercase; color: var(--text-light); }
+  input, textarea, select {
+    font-family: 'DM Sans', sans-serif; font-size: 15px; padding: 14px 16px;
+    border: 1.5px solid var(--cream-mid); border-radius: 8px; background: var(--white);
+    color: var(--text); outline: none; transition: border-color 0.2s; resize: vertical;
+  }
+  input:focus, textarea:focus, select:focus { border-color: var(--gold); }
+  textarea { min-height: 100px; }
+
+  .buyer-types-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; }
+  .buyer-card {
+    border: 2px solid var(--cream-mid); border-radius: var(--radius); padding: 20px;
+    cursor: pointer; transition: all 0.25s ease; background: var(--white); position: relative;
+  }
+  .buyer-card:hover { border-color: var(--gold-light); transform: translateY(-2px); box-shadow: var(--shadow); }
+  .buyer-card.selected { border-color: var(--gold); background: #FDF8F0; }
+  .buyer-card.selected::after { content: '✓'; position: absolute; top: 12px; right: 14px; color: var(--gold); font-weight: 700; font-size: 16px; }
+  .buyer-icon { font-size: 28px; margin-bottom: 10px; }
+  .buyer-name { font-family: 'Playfair Display', serif; font-size: 16px; font-weight: 700; margin-bottom: 6px; }
+  .buyer-desc { font-size: 13px; color: var(--text-light); line-height: 1.5; }
+
+  .pillars-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+  .pillar-card { background: var(--white); border-radius: var(--radius); padding: 24px; box-shadow: var(--shadow); border-left: 4px solid var(--gold); }
+  .pillar-card.p2 { border-left-color: var(--mint); }
+  .pillar-card.p3 { border-left-color: var(--rose); }
+  .pillar-card.p4 { border-left-color: var(--lavender); }
+  .pillar-card.full { grid-column: 1 / -1; }
+  .pillar-label { font-size: 10px; letter-spacing: 2px; text-transform: uppercase; color: var(--text-light); margin-bottom: 6px; font-weight: 600; }
+  .pillar-name { font-family: 'Playfair Display', serif; font-size: 20px; margin-bottom: 4px; font-style: italic; }
+  .pillar-hook { font-size: 15px; font-weight: 600; color: var(--dark); margin-bottom: 12px; }
+  .pillar-meta { font-size: 13px; color: var(--text-light); line-height: 1.6; }
+  .pillar-format { display: inline-block; padding: 4px 10px; background: var(--cream); border-radius: 20px; font-size: 11px; font-weight: 600; letter-spacing: 1px; text-transform: uppercase; color: var(--text-light); margin-top: 12px; }
+
+  .week-grid { display: grid; grid-template-columns: repeat(5, 1fr); gap: 12px; margin-top: 24px; }
+  .day-card { background: var(--white); border-radius: 10px; padding: 16px 14px; box-shadow: var(--shadow); border-top: 3px solid var(--gold); }
+  .day-card.p2 { border-top-color: var(--mint); }
+  .day-card.p3 { border-top-color: var(--rose); }
+  .day-card.p4 { border-top-color: var(--lavender); }
+  .day-name { font-weight: 700; font-size: 13px; letter-spacing: 1px; text-transform: uppercase; color: var(--text-light); margin-bottom: 8px; }
+  .day-pillar { font-family: 'Playfair Display', serif; font-size: 15px; margin-bottom: 6px; font-style: italic; }
+  .day-format { font-size: 11px; color: var(--text-light); }
+
+  .output-card { background: var(--white); border-radius: var(--radius); box-shadow: var(--shadow-lg); overflow: hidden; margin-bottom: 24px; }
+  .output-header { background: var(--dark); padding: 20px 28px; display: flex; align-items: center; justify-content: space-between; }
+  .output-title { color: var(--cream); font-family: 'Playfair Display', serif; font-size: 18px; }
+  .output-tag { padding: 5px 14px; border: 1px solid var(--gold); border-radius: 20px; font-size: 11px; color: var(--gold); letter-spacing: 1px; text-transform: uppercase; }
+  .output-body { padding: 28px; }
+  .content-block { background: var(--cream); border-radius: 8px; padding: 20px; margin-bottom: 16px; position: relative; }
+  .content-block-label { font-size: 10px; letter-spacing: 2px; text-transform: uppercase; color: var(--gold); font-weight: 700; margin-bottom: 10px; }
+  .content-text { font-size: 15px; line-height: 1.7; color: var(--dark); white-space: pre-wrap; }
+  .copy-btn { position: absolute; top: 16px; right: 16px; background: var(--dark); color: var(--cream); border: none; border-radius: 6px; padding: 6px 12px; font-size: 11px; cursor: pointer; font-family: 'DM Sans', sans-serif; letter-spacing: 1px; text-transform: uppercase; transition: background 0.2s; }
+  .copy-btn:hover { background: var(--gold); color: var(--dark); }
+
+  .profile-summary { background: var(--dark); border-radius: var(--radius); padding: 24px 28px; margin-bottom: 32px; display: grid; grid-template-columns: repeat(4, 1fr); gap: 20px; }
+  .profile-item-label { font-size: 10px; letter-spacing: 2px; text-transform: uppercase; color: var(--gold); margin-bottom: 4px; }
+  .profile-item-value { font-size: 14px; color: var(--cream); font-weight: 500; line-height: 1.4; }
+
+  .canva-hint { background: linear-gradient(135deg, var(--dark) 0%, var(--dark-mid) 100%); border-radius: var(--radius); padding: 28px; color: var(--cream); margin-top: 32px; display: flex; align-items: center; gap: 24px; }
+  .canva-icon { font-size: 40px; flex-shrink: 0; }
+  .canva-title { font-family: 'Playfair Display', serif; font-size: 18px; color: var(--gold); margin-bottom: 6px; }
+  .canva-text { font-size: 14px; color: var(--cream-mid); line-height: 1.6; }
+
+  .btn-row { display: flex; gap: 12px; margin-top: 32px; }
+  .btn-primary { background: var(--dark); color: var(--cream); border: none; border-radius: 8px; padding: 16px 32px; font-family: 'DM Sans', sans-serif; font-size: 14px; font-weight: 600; letter-spacing: 1px; text-transform: uppercase; cursor: pointer; transition: all 0.2s; }
+  .btn-primary:hover { background: var(--gold); color: var(--dark); }
+  .btn-secondary { background: transparent; color: var(--text-light); border: 1.5px solid var(--cream-mid); border-radius: 8px; padding: 16px 24px; font-family: 'DM Sans', sans-serif; font-size: 14px; font-weight: 500; cursor: pointer; transition: all 0.2s; }
+  .btn-secondary:hover { border-color: var(--text-light); color: var(--text); }
+
+  .loading-state { text-align: center; padding: 60px 20px; }
+  .loader { width: 48px; height: 48px; border: 3px solid var(--cream-mid); border-top-color: var(--gold); border-radius: 50%; animation: spin 0.8s linear infinite; margin: 0 auto 20px; }
+  @keyframes spin { to { transform: rotate(360deg); } }
+  .loading-text { color: var(--text-light); font-size: 15px; }
+
+  @media (max-width: 700px) {
+    .form-grid, .buyer-types-grid, .pillars-grid, .week-grid, .profile-summary { grid-template-columns: 1fr; }
+    .app-container { padding: 24px 16px 60px; }
+    .steps-bar { flex-wrap: wrap; }
+    .step-btn { flex: 0 0 50%; }
+  }
+</style>
+</head>
+<body>
+
+<header class="app-header">
+  <div class="logo-mark">Q</div>
+  <div>
+    <div class="app-title">Content Creator App</div>
+    <div class="app-subtitle">Positionierungs-System · 5-Säulen-Methode</div>
+  </div>
+</header>
+
+<div class="app-container">
+
+  <div class="steps-bar">
+    <button class="step-btn active" onclick="goStep(1)"><span class="step-num">01</span>Profil</button>
+    <button class="step-btn" onclick="goStep(2)"><span class="step-num">02</span>Käufertyp</button>
+    <button class="step-btn" onclick="goStep(3)"><span class="step-num">03</span>System</button>
+    <button class="step-btn" onclick="goStep(4)"><span class="step-num">04</span>Content</button>
+  </div>
+
+  <!-- PANEL 1 -->
+  <div class="panel active" id="panel-1">
+    <div class="panel-header">
+      <div class="panel-eyebrow">Schritt 01</div>
+      <div class="panel-title">Dein Business-Profil</div>
+      <div class="panel-desc">Gib deiner Kundin (oder dir selbst) die Grundlage. Alles was hier steht, prägt den gesamten Content.</div>
+    </div>
+    <div class="form-grid">
+      <div class="form-group">
+        <label>Name / Brand</label>
+        <input type="text" id="brand-name" placeholder="z.B. erfolgsqueensmind" />
+      </div>
+      <div class="form-group">
+        <label>Angebot / Produkt</label>
+        <input type="text" id="offer" placeholder="z.B. High-Ticket Affiliate Marketing (SCB)" />
+      </div>
+      <div class="form-group full">
+        <label>Positionierungssatz</label>
+        <input type="text" id="positioning" placeholder="Ich helfe [Zielgruppe], mit [Methode] [Ergebnis] zu erreichen." />
+      </div>
+      <div class="form-group">
+        <label>Zielgruppe</label>
+        <input type="text" id="audience" placeholder="z.B. Frauen 30–45, körperlich arbeitend" />
+      </div>
+      <div class="form-group">
+        <label>Tonalität</label>
+        <select id="tone">
+          <option value="direkt-empowernd">Direkt & empowernd (Jacky/Jules-Stil)</option>
+          <option value="sanft-einladend">Sanft & einladend</option>
+          <option value="sachlich-kompetent">Sachlich & kompetent</option>
+          <option value="spirituell-tief">Spirituell & tief</option>
+          <option value="humorvoll-nah">Humorvoll & nahbar</option>
+        </select>
+      </div>
+      <div class="form-group full">
+        <label>Größter Schmerzpunkt der Zielgruppe</label>
+        <textarea id="pain" placeholder="Was hält sie nachts wach? Was nervt sie täglich?"></textarea>
+      </div>
+      <div class="form-group full">
+        <label>Ihr größter Wunsch / Das Zielbild</label>
+        <textarea id="desire" placeholder="Wie soll ihr Leben in 12 Monaten aussehen?"></textarea>
+      </div>
+    </div>
+    <div class="btn-row">
+      <button class="btn-primary" onclick="nextStep(1)">Weiter zu Käufertyp →</button>
+    </div>
+  </div>
+
+  <!-- PANEL 2 -->
+  <div class="panel" id="panel-2">
+    <div class="panel-header">
+      <div class="panel-eyebrow">Schritt 02</div>
+      <div class="panel-title">Welcher Käufertyp ist deine Kundin?</div>
+      <div class="panel-desc">Jeder Käufertyp braucht einen anderen Einstieg, ein anderes Wording, eine andere emotionale Brücke.</div>
+    </div>
+    <div class="buyer-types-grid">
+      <div class="buyer-card" onclick="selectBuyer(this, 'skeptisch', 'Die Skeptikerin')">
+        <div class="buyer-icon">🔍</div>
+        <div class="buyer-name">Die Skeptikerin</div>
+        <div class="buyer-desc">Hat alles schon gehört. Vertraut erstmal niemandem. Kauft erst, wenn Beweise da sind. Braucht Social Proof und Ehrlichkeit.</div>
+      </div>
+      <div class="buyer-card" onclick="selectBuyer(this, 'emotional', 'Die Emotionale')">
+        <div class="buyer-icon">💛</div>
+        <div class="buyer-name">Die Emotionale</div>
+        <div class="buyer-desc">Kauft aus dem Bauch. Braucht das Gefühl, verstanden zu werden. Identifikation ist ihr Einstieg — nicht Fakten.</div>
+      </div>
+      <div class="buyer-card" onclick="selectBuyer(this, 'logisch', 'Die Analytische')">
+        <div class="buyer-icon">📊</div>
+        <div class="buyer-name">Die Analytische</div>
+        <div class="buyer-desc">Will verstehen wie es funktioniert. Zahlen, Struktur, klare Schritte. Kauft, wenn sie den Plan sieht.</div>
+      </div>
+      <div class="buyer-card" onclick="selectBuyer(this, 'muede', 'Die Erschöpfte')">
+        <div class="buyer-icon">😮‍💨</div>
+        <div class="buyer-name">Die Erschöpfte</div>
+        <div class="buyer-desc">Hat jahrelang funktioniert. Will endlich einen Ausweg. Braucht Hoffnung — aber realistisch, nicht schöngeredet.</div>
+      </div>
+      <div class="buyer-card" onclick="selectBuyer(this, 'ambitioniert', 'Die Ambitionierte')">
+        <div class="buyer-icon">🔥</div>
+        <div class="buyer-name">Die Ambitionierte</div>
+        <div class="buyer-desc">Weiß, was sie will. Sucht nur noch das richtige System. Keine Motivation nötig — nur Klarheit und Speed.</div>
+      </div>
+      <div class="buyer-card" onclick="selectBuyer(this, 'unsicher', 'Die Unsichere')">
+        <div class="buyer-icon">🌱</div>
+        <div class="buyer-name">Die Unsichere</div>
+        <div class="buyer-desc">Zweifelt an sich selbst. Braucht Ermutigung, Beispiele von Frauen wie ihr und sanfte, klare Führung.</div>
+      </div>
+    </div>
+    <div class="btn-row">
+      <button class="btn-secondary" onclick="goStep(1)">← Zurück</button>
+      <button class="btn-primary" onclick="nextStep(2)">Weiter zum System →</button>
+    </div>
+  </div>
+
+  <!-- PANEL 3 -->
+  <div class="panel" id="panel-3">
+    <div class="panel-header">
+      <div class="panel-eyebrow">Schritt 03</div>
+      <div class="panel-title">Das 5-Säulen-Content-System</div>
+      <div class="panel-desc">Jede Säule hat eine klare psychologische Funktion und ein definiertes Format.</div>
+    </div>
+    <div class="pillars-grid">
+      <div class="pillar-card">
+        <div class="pillar-label">Säule 01</div>
+        <div class="pillar-name">Desire</div>
+        <div class="pillar-hook">Das Zielbild, das sie sich wünscht — nicht dein Leben.</div>
+        <div class="pillar-meta">Desire entsteht durch Identifikation, nicht durch Erklärung. Sie muss sich im Post sehen, nicht dich.</div>
+        <div class="pillar-format">Carousel · Mo + Mi</div>
+      </div>
+      <div class="pillar-card p2">
+        <div class="pillar-label">Säule 02</div>
+        <div class="pillar-name">Problem · Solution</div>
+        <div class="pillar-hook">Benenn was sie fühlt — zeig den Ausweg.</div>
+        <div class="pillar-meta">Identifikation zuerst. Dann Lösung. Nie umgekehrt. Sie muss sich gesehen fühlen, bevor sie kauft.</div>
+        <div class="pillar-format">Carousel · Dienstag</div>
+      </div>
+      <div class="pillar-card p3">
+        <div class="pillar-label">Säule 03</div>
+        <div class="pillar-name">Social Proof</div>
+        <div class="pillar-hook">Echte Ergebnisse — stärker als jede Erklärung.</div>
+        <div class="pillar-meta">Beweis schlägt Versprechen. Immer. Die Frau, die kaufen will, braucht einen Grund zu glauben, dass es klappt.</div>
+        <div class="pillar-format">Reel · Donnerstag</div>
+      </div>
+      <div class="pillar-card p4">
+        <div class="pillar-label">Säule 04</div>
+        <div class="pillar-name">Authority</div>
+        <div class="pillar-hook">Deine Meinung. Kein Weichspüler.</div>
+        <div class="pillar-meta">Frauen kaufen von Frauen, die wissen wer sie sind. Meinung = Vertrauen. Keine Meinung = austauschbar.</div>
+        <div class="pillar-format">Reel · Freitag</div>
+      </div>
+      <div class="pillar-card full">
+        <div class="pillar-label">Säule 05</div>
+        <div class="pillar-name">Behind the Scenes</div>
+        <div class="pillar-hook">Was hinter den Kulissen wirklich passiert.</div>
+        <div class="pillar-meta">Nicht performte Authentizität. Sie sieht was sie bekommt, wenn sie mit dir arbeitet — bevor sie kauft.</div>
+        <div class="pillar-format">Carousel · Flexibel</div>
+      </div>
+    </div>
+    <div style="margin-top:36px;">
+      <div class="panel-eyebrow" style="margin-bottom:12px;">Wöchentlicher Content-Mix</div>
+      <div class="week-grid">
+        <div class="day-card"><div class="day-name">Montag</div><div class="day-pillar">Desire</div><div class="day-format">Carousel</div></div>
+        <div class="day-card p2"><div class="day-name">Dienstag</div><div class="day-pillar">Problem · Solution</div><div class="day-format">Carousel</div></div>
+        <div class="day-card"><div class="day-name">Mittwoch</div><div class="day-pillar">Desire</div><div class="day-format">Carousel</div></div>
+        <div class="day-card p3"><div class="day-name">Donnerstag</div><div class="day-pillar">Social Proof</div><div class="day-format">Reel</div></div>
+        <div class="day-card p4"><div class="day-name">Freitag</div><div class="day-pillar">Authority</div><div class="day-format">Reel</div></div>
+      </div>
+    </div>
+    <div class="btn-row">
+      <button class="btn-secondary" onclick="goStep(2)">← Zurück</button>
+      <button class="btn-primary" onclick="generateContent()">✦ Content generieren →</button>
+    </div>
+  </div>
+
+  <!-- PANEL 4 -->
+  <div class="panel" id="panel-4">
+    <div id="loading-state" class="loading-state">
+      <div class="loader"></div>
+      <div class="loading-text">Content wird für deine Zielgruppe erstellt...</div>
+    </div>
+    <div id="content-output" style="display:none;">
+      <div class="panel-header">
+        <div class="panel-eyebrow">Dein generierter Content</div>
+        <div class="panel-title">Fertig für Canva</div>
+        <div class="panel-desc">Auf deinen Käufertyp und deine Zielgruppe zugeschnitten. Copy-paste in Canva und los.</div>
+      </div>
+      <div class="profile-summary">
+        <div><div class="profile-item-label">Brand</div><div class="profile-item-value" id="sum-brand">–</div></div>
+        <div><div class="profile-item-label">Käufertyp</div><div class="profile-item-value" id="sum-buyer">–</div></div>
+        <div><div class="profile-item-label">Zielgruppe</div><div class="profile-item-value" id="sum-audience">–</div></div>
+        <div><div class="profile-item-label">Tonalität</div><div class="profile-item-value" id="sum-tone">–</div></div>
+      </div>
+      <div id="generated-content"></div>
+      <div class="canva-hint">
+        <div class="canva-icon">🎨</div>
+        <div>
+          <div class="canva-title">Nächster Schritt: Canva</div>
+          <div class="canva-text">Hook als Headline ins Carousel. Caption in den Post-Text. Format, Farben und Schriften bleiben in deinem Brand-Kit. Ein Post = ein Format = eine Emotion.</div>
+        </div>
+      </div>
+      <div class="btn-row">
+        <button class="btn-secondary" onclick="goStep(1)">↺ Neues Profil starten</button>
+        <button class="btn-primary" onclick="generateContent()">✦ Neuen Content generieren</button>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<script>
+  let currentStep = 1;
+  let selectedBuyer = '';
+  let selectedBuyerLabel = '';
+
+  function goStep(n) {
+    document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
+    document.querySelectorAll('.step-btn').forEach((b, i) => {
+      b.classList.remove('active', 'done');
+      if (i + 1 < n) b.classList.add('done');
+      if (i + 1 === n) b.classList.add('active');
+    });
+    document.getElementById('panel-' + n).classList.add('active');
+    currentStep = n;
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  }
+
+  function nextStep(from) {
+    if (from === 1) {
+      const brand = document.getElementById('brand-name').value.trim();
+      const offer = document.getElementById('offer').value.trim();
+      if (!brand || !offer) { alert('Bitte Brand-Name und Angebot ausfüllen.'); return; }
+    }
+    if (from === 2) {
+      if (!selectedBuyer) { alert('Bitte einen Käufertyp auswählen.'); return; }
+    }
+    goStep(from + 1);
+  }
+
+  function selectBuyer(el, type, label) {
+    document.querySelectorAll('.buyer-card').forEach(c => c.classList.remove('selected'));
+    el.classList.add('selected');
+    selectedBuyer = type;
+    selectedBuyerLabel = label;
+  }
+
+  const buyerInstructions = {
+    skeptisch: 'Die Skeptikerin: Starte mit konkreten Beweisen und echten Zahlen. Kein Hype. Zeig erst, dann überzeug.',
+    emotional: 'Die Emotionale: Starte mit dem Gefühl, nicht mit dem Angebot. Identifikation vor Information.',
+    logisch: 'Die Analytische: Klare Struktur, klare Schritte, klare Ergebnisse. Was passiert genau und in welchen Schritten?',
+    muede: 'Die Erschöpfte: Sie hat jahrelang funktioniert. Benenn genau dieses Gefühl. Zeig ihr, dass es anders geht — realistisch, nicht als Märchen.',
+    ambitioniert: 'Die Ambitionierte: Kein Motivationssprech nötig. Sie braucht Klarheit über das System. Direkt, schnell, ohne Umwege.',
+    unsicher: 'Die Unsichere: Fang sanft an, baue Vertrauen auf. Zeig Frauen wie sie, die es geschafft haben. Klare kleine Schritte.'
+  };
+
+  async function generateContent() {
+    goStep(4);
+    document.getElementById('loading-state').style.display = 'block';
+    document.getElementById('content-output').style.display = 'none';
+
+    const brand = document.getElementById('brand-name').value || 'Dein Brand';
+    const offer = document.getElementById('offer').value || '';
+    const positioning = document.getElementById('positioning').value || '';
+    const audience = document.getElementById('audience').value || '';
+    const pain = document.getElementById('pain').value || '';
+    const desire = document.getElementById('desire').value || '';
+    const toneEl = document.getElementById('tone');
+    const tone = toneEl.options[toneEl.selectedIndex].text;
+
+    document.getElementById('sum-brand').textContent = brand;
+    document.getElementById('sum-buyer').textContent = selectedBuyerLabel || '–';
+    document.getElementById('sum-audience').textContent = audience || '–';
+    document.getElementById('sum-tone').textContent = tone;
+
+    const systemPrompt = `Du bist ein erfahrener Social-Media-Experte für Instagram und High-Ticket Affiliate Marketing im DACH-Raum. Du schreibst auf Deutsch. Dein Stil ist direkt, empowernd, von Frau zu Frau, menschlich — wie Jacky oder Jules von SCB. Keine Bindestriche als Aufzählungszeichen. Keine verkürzten Einzelsätze wie "Jeden Abend. Monate lang." — immer als ganzer Satz formulieren. Kein generisches Wording. Echt, direkt, emotional präzise.`;
+
+    const userPrompt = `Erstelle für folgendes Profil DREI fertige Instagram-Content-Texte nach dem 5-Säulen-System:
+
+Brand: ${brand}
+Angebot: ${offer}
+Positionierung: ${positioning}
+Zielgruppe: ${audience}
+Hauptschmerz: ${pain}
+Hauptwunsch / Zielbild: ${desire}
+Tonalität: ${tone}
+Käufertyp: ${buyerInstructions[selectedBuyer] || 'Allgemein empowernd'}
+
+Erstelle genau 3 Posts — jeder aus einer anderen Säule (Desire, Problem-Solution, Authority). Für jeden Post:
+1. saeule: Name der Säule
+2. format: Carousel oder Reel
+3. hook: Die ersten 1-2 Zeilen — muss sofort stoppen. Kein generisches Opener.
+4. caption: Vollständiger Instagram-Post-Text, 150-250 Wörter, mit passenden Emojis, 1 klarer CTA am Ende
+5. canva: 1 konkreter Satz was das visuelle Element dieses Posts ist
+
+Antworte NUR als reines JSON-Array ohne Markdown-Codeblocks: [{saeule, format, hook, caption, canva}, ...]`;
+
+    try {
+      const response = await fetch('/api/generate', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          system: systemPrompt,
+          messages: [{ role: 'user', content: userPrompt }]
+        })
+      });
+
+      const data = await response.json();
+      const raw = data.content?.map(b => b.text || '').join('') || '';
+      const clean = raw.replace(/```json|```/g, '').trim();
+
+      let posts;
+      try { posts = JSON.parse(clean); } catch { posts = null; }
+
+      document.getElementById('loading-state').style.display = 'none';
+      document.getElementById('content-output').style.display = 'block';
+
+      const container = document.getElementById('generated-content');
+      container.innerHTML = '';
+
+      if (!posts || !Array.isArray(posts)) {
+        container.innerHTML = `<div class="output-card"><div class="output-body"><div class="content-block"><div class="content-text">${raw}</div></div></div></div>`;
+        return;
+      }
+
+      posts.forEach((post) => {
+        const card = document.createElement('div');
+        card.className = 'output-card';
+        const hookEsc = (post.hook||'').replace(/\\/g,'\\\\').replace(/`/g,'\\`');
+        const captionEsc = (post.caption||'').replace(/\\/g,'\\\\').replace(/`/g,'\\`');
+        card.innerHTML = `
+          <div class="output-header">
+            <div class="output-title">${post.saeule || 'Content'}</div>
+            <div class="output-tag">${post.format || 'Carousel'}</div>
+          </div>
+          <div class="output-body">
+            <div class="content-block" style="border-left:3px solid var(--gold);">
+              <div class="content-block-label">Hook · Erste Zeilen</div>
+              <div class="content-text">${post.hook || ''}</div>
+              <button class="copy-btn" onclick="copyText(this, \`${hookEsc}\`)">Kopieren</button>
+            </div>
+            <div class="content-block">
+              <div class="content-block-label">Caption · Vollständiger Post-Text</div>
+              <div class="content-text">${post.caption || ''}</div>
+              <button class="copy-btn" onclick="copyText(this, \`${captionEsc}\`)">Kopieren</button>
+            </div>
+            <div class="content-block" style="background:var(--dark);">
+              <div class="content-block-label" style="color:var(--gold);">🎨 Canva-Hinweis</div>
+              <div class="content-text" style="color:var(--cream);">${post.canva || ''}</div>
+            </div>
+          </div>`;
+        container.appendChild(card);
+      });
+
+    } catch (err) {
+      document.getElementById('loading-state').style.display = 'none';
+      document.getElementById('content-output').style.display = 'block';
+      document.getElementById('generated-content').innerHTML = `
+        <div class="output-card"><div class="output-body"><div class="content-block">
+          <div class="content-block-label">Verbindungsfehler</div>
+          <div class="content-text">Content konnte nicht generiert werden.\n\n${err.message}</div>
+        </div></div></div>`;
+    }
+  }
+
+  function copyText(btn, text) {
+    navigator.clipboard.writeText(text).then(() => {
+      btn.textContent = '✓ Kopiert';
+      setTimeout(() => btn.textContent = 'Kopieren', 2000);
+    });
+  }
+</script>
+</body>
+</html>
