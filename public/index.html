@@ -236,9 +236,42 @@
   <div class="panel" id="panel-2">
     <div class="panel-header">
       <div class="panel-eyebrow">Schritt 02</div>
-      <div class="panel-title">EQM · Brandboard Master</div>
-      <div class="panel-desc">Deine offiziellen Farben, Schriften und Taglines — direkt aus dem Brandboard übernommen.</div>
+      <div class="panel-title">Brand-Manager</div>
+      <div class="panel-desc">Wähle ein gespeichertes Brand — oder füge ein neues hinzu. Ein Klick lädt alles.</div>
     </div>
+
+    <!-- BRAND PROFILE CARDS -->
+    <div style="margin-bottom:32px;">
+      <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:14px;">
+        <label>Gespeicherte Brands</label>
+        <button onclick="showAddBrand()" style="background:var(--dark);color:var(--gold);border:none;border-radius:6px;padding:8px 16px;font-size:12px;font-weight:600;cursor:pointer;letter-spacing:1px;text-transform:uppercase;font-family:'DM Sans',sans-serif;">+ Brand hinzufügen</button>
+      </div>
+      <div id="brand-profiles-grid" style="display:grid;grid-template-columns:repeat(3,1fr);gap:14px;"></div>
+    </div>
+
+    <!-- ADD BRAND FORM (versteckt) -->
+    <div id="add-brand-form" style="display:none;background:var(--white);border-radius:var(--radius);padding:24px;margin-bottom:28px;box-shadow:var(--shadow);">
+      <div style="font-size:14px;font-weight:700;margin-bottom:16px;color:var(--dark);">Neues Brand anlegen</div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:14px;">
+        <div><label>Brand-Name</label><input type="text" id="nb-name" placeholder="z.B. Kundin 1" style="margin-top:6px;width:100%;"></div>
+        <div><label>Instagram Handle</label><input type="text" id="nb-handle" placeholder="@handle" style="margin-top:6px;width:100%;"></div>
+        <div><label>Hintergrund</label><input type="color" id="nb-bg" value="#FBF8F5" style="margin-top:6px;width:100%;height:44px;border-radius:8px;border:1.5px solid var(--cream-mid);cursor:pointer;"></div>
+        <div><label>Akzentfarbe</label><input type="color" id="nb-accent" value="#FFC3B0" style="margin-top:6px;width:100%;height:44px;border-radius:8px;border:1.5px solid var(--cream-mid);cursor:pointer;"></div>
+        <div><label>Textfarbe</label><input type="color" id="nb-text" value="#232324" style="margin-top:6px;width:100%;height:44px;border-radius:8px;border:1.5px solid var(--cream-mid);cursor:pointer;"></div>
+        <div><label>Schriftstil</label>
+          <select id="nb-font" style="margin-top:6px;width:100%;">
+            <option value="serif">Elegant · Serif</option>
+            <option value="sans">Modern · Sans-Serif</option>
+          </select>
+        </div>
+      </div>
+      <div style="display:flex;gap:10px;">
+        <button onclick="saveBrandProfile()" style="background:var(--dark);color:var(--cream);border:none;border-radius:8px;padding:12px 24px;font-size:13px;font-weight:600;cursor:pointer;font-family:'DM Sans',sans-serif;letter-spacing:1px;text-transform:uppercase;">Speichern</button>
+        <button onclick="document.getElementById('add-brand-form').style.display='none'" style="background:transparent;color:var(--text-light);border:1.5px solid var(--cream-mid);border-radius:8px;padding:12px 20px;font-size:13px;cursor:pointer;font-family:'DM Sans',sans-serif;">Abbrechen</button>
+      </div>
+    </div>
+
+    <div style="height:1px;background:var(--cream-mid);margin-bottom:28px;"></div>
 
     <div class="form-group full" style="margin-bottom:28px;">
       <label>Design-Kombination wählen</label>
@@ -421,6 +454,94 @@
   let brandColors = { bg: '#FBF8F5', accent: '#FFC3B0', text: '#232324', gradient: 'linear-gradient(135deg,#FFC3B0,#FFD78F)' };
   let brandFont = 'serif';
   let brandTemplate = 'centered';
+  let activeBrandId = 'eqm';
+
+  const defaultProfiles = [
+    { id:'eqm', name:'Erfolgsqueensmind', handle:'@erfolgsqueensmind', bg:'#FBF8F5', accent:'#FFC3B0', text:'#232324', gradient:'linear-gradient(135deg,#FFC3B0,#FFD78F)', font:'serif', template:'centered' },
+    { id:'dark', name:'Dark Luxury', handle:'@brand', bg:'#232324', accent:'#FFD78F', text:'#FBF8F5', gradient:'linear-gradient(135deg,#FFD78F,#FFC3B0)', font:'serif', template:'centered' },
+    { id:'rose', name:'Rose & Soft', handle:'@brand', bg:'#FFE3F0', accent:'#D4848A', text:'#232324', gradient:'linear-gradient(135deg,#D4848A,#FFE3F0)', font:'serif', template:'centered' },
+    { id:'mint', name:'Mint & Fresh', handle:'@brand', bg:'#F0F8F7', accent:'#7BBFB5', text:'#1A1410', gradient:'linear-gradient(135deg,#7BBFB5,#A8D8D2)', font:'sans', template:'centered' },
+    { id:'purple', name:'Purple Luxury', handle:'@brand', bg:'#1E1028', accent:'#A89BC2', text:'#F5EFE6', gradient:'linear-gradient(135deg,#A89BC2,#C9BFD8)', font:'serif', template:'centered' }
+  ];
+
+  function loadSavedProfiles() {
+    const saved = localStorage.getItem('eqm_brand_profiles');
+    return saved ? [...defaultProfiles, ...JSON.parse(saved)] : defaultProfiles;
+  }
+
+  function renderBrandProfiles() {
+    const profiles = loadSavedProfiles();
+    const grid = document.getElementById('brand-profiles-grid');
+    if (!grid) return;
+    grid.innerHTML = profiles.map(p => `
+      <div onclick="activateBrand('${p.id}')" style="border:2px solid ${activeBrandId===p.id?p.accent:'#EDE4D5'};border-radius:12px;overflow:hidden;cursor:pointer;transition:all 0.2s;box-shadow:${activeBrandId===p.id?'0 0 0 3px '+p.accent+'33':''none''};">
+        <div style="aspect-ratio:1;background:${p.bg};display:flex;flex-direction:column;align-items:center;justify-content:center;padding:16px;text-align:center;position:relative;">
+          <div style="position:absolute;top:0;left:0;right:0;height:3px;background:${p.gradient};"></div>
+          <div style="font-size:9px;letter-spacing:2px;text-transform:uppercase;color:${p.accent};font-weight:700;margin-bottom:8px;">${p.handle}</div>
+          <div style="font-size:13px;font-weight:700;color:${p.text};font-family:${p.font==='serif'?"'Playfair Display',serif":"'DM Sans',sans-serif"};line-height:1.3;">Dein Hook hier</div>
+          ${p.id!=='eqm'&&p.id!=='dark'&&p.id!=='rose'&&p.id!=='mint'&&p.id!=='purple'?`<button onclick="event.stopPropagation();deleteBrand('${p.id}')" style="position:absolute;top:6px;right:6px;background:rgba(0,0,0,0.3);color:#fff;border:none;border-radius:4px;padding:2px 6px;font-size:10px;cursor:pointer;">✕</button>`:''}
+        </div>
+        <div style="padding:10px 12px;background:#fff;border-top:1px solid #EDE4D5;">
+          <div style="font-size:12px;font-weight:700;color:#1A1410;">${p.name}</div>
+          <div style="font-size:10px;color:#6B5C4E;margin-top:2px;">${activeBrandId===p.id?'✓ Aktiv':'Klicken zum Laden'}</div>
+        </div>
+      </div>`).join('');
+  }
+
+  function activateBrand(id) {
+    const profiles = loadSavedProfiles();
+    const p = profiles.find(x => x.id === id);
+    if (!p) return;
+    activeBrandId = id;
+    brandColors = { bg: p.bg, accent: p.accent, text: p.text, gradient: p.gradient };
+    brandFont = p.font || 'serif';
+    brandTemplate = p.template || 'centered';
+    document.getElementById('brand-name').value = p.name;
+    document.getElementById('insta-handle').value = p.handle;
+    document.getElementById('offer').value = p.offer || document.getElementById('offer').value;
+    updateBrandPreview();
+    renderBrandProfiles();
+    showToast('✓ ' + p.name + ' geladen!');
+  }
+
+  function showAddBrand() {
+    document.getElementById('add-brand-form').style.display = 'block';
+    document.getElementById('add-brand-form').scrollIntoView({ behavior:'smooth' });
+  }
+
+  function saveBrandProfile() {
+    const name = document.getElementById('nb-name').value.trim();
+    const handle = document.getElementById('nb-handle').value.trim();
+    if (!name) { alert('Bitte Brand-Name eingeben.'); return; }
+    const newProfile = {
+      id: 'custom_' + Date.now(),
+      name, handle: handle || '@' + name.toLowerCase().replace(/\s/g,''),
+      bg: document.getElementById('nb-bg').value,
+      accent: document.getElementById('nb-accent').value,
+      text: document.getElementById('nb-text').value,
+      gradient: `linear-gradient(135deg,${document.getElementById('nb-accent').value},${document.getElementById('nb-bg').value})`,
+      font: document.getElementById('nb-font').value,
+      template: 'centered'
+    };
+    const saved = JSON.parse(localStorage.getItem('eqm_brand_profiles') || '[]');
+    saved.push(newProfile);
+    localStorage.setItem('eqm_brand_profiles', JSON.stringify(saved));
+    document.getElementById('add-brand-form').style.display = 'none';
+    document.getElementById('nb-name').value = '';
+    document.getElementById('nb-handle').value = '';
+    renderBrandProfiles();
+    showToast('✓ ' + name + ' gespeichert!');
+  }
+
+  function deleteBrand(id) {
+    const saved = JSON.parse(localStorage.getItem('eqm_brand_profiles') || '[]');
+    const updated = saved.filter(p => p.id !== id);
+    localStorage.setItem('eqm_brand_profiles', JSON.stringify(updated));
+    if (activeBrandId === id) activateBrand('eqm');
+    else renderBrandProfiles();
+  }
+
+  window.addEventListener('DOMContentLoaded', () => renderBrandProfiles());
 
   function goStep(n) {
     document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
