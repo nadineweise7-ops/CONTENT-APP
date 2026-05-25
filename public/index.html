@@ -474,7 +474,10 @@ Antworte NUR als reines JSON-Array ohne Markdown-Codeblocks: [{saeule, format, h
         })
       });
 
-      const data = await response.json();
+      const responseText = await response.text();
+      let data;
+      try { data = JSON.parse(responseText); }
+      catch(e) { throw new Error('Server-Fehler: ' + responseText.substring(0, 300)); }
       const raw = data.content?.map(b => b.text || '').join('') || '';
       const clean = raw.replace(/```json|```/g, '').trim();
 
