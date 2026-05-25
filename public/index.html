@@ -542,7 +542,10 @@
               ${innerHtml}
             </div>
             <button class="download-btn" onclick="downloadDesign(${idx},'${saeuleName}')">
-              ⬇ Design als PNG herunterladen (Instagram-ready)
+              ⬇ Design als PNG herunterladen
+            </button>
+            <button class="download-btn" style="background:var(--dark);color:#fff;margin-top:8px;" onclick="openCanva(\`${captionEsc}\`, \`${hookEsc}\`)">
+              🎨 In Canva öffnen & Text einfügen
             </button>
           </div>
           <div class="content-block">
@@ -649,6 +652,16 @@ Antworte NUR als JSON-Array ohne Codeblöcke, ohne Backslash vor Apostrophen: [{
     } catch(e) {
       if (btn) btn.textContent = '⬇ Design als PNG herunterladen (Instagram-ready)';
     }
+  }
+
+  function openCanva(caption, hook) {
+    const text = hook + '\n\n' + caption;
+    navigator.clipboard.writeText(text).then(() => {
+      showToast('✓ Text kopiert! Canva öffnet sich...');
+      setTimeout(() => {
+        window.open('https://www.canva.com/design/DAHKsAcoRUU/NYFTJgFl-rNVRJkh_ub92Q/edit', '_blank');
+      }, 600);
+    });
   }
 
   function copyText(btn, text) {
