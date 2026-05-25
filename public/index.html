@@ -505,17 +505,9 @@ Antworte NUR als reines JSON-Array. Kein Markdown, keine Code-Blöcke, keine Bac
       try { data = JSON.parse(responseText); }
       catch(e) { throw new Error('Server-Fehler: ' + responseText.substring(0, 300)); }
       if (data.error) throw new Error('API Fehler: ' + (data.error.message || data.error));
-      const raw = data.content?.map(b => b.text || '').join('') || '';
-      if (!raw) throw new Error('Keine Antwort vom Server. Bitte nochmal versuchen.');
-
-      let posts = null;
-      try {
-        const match = raw.match(/\[[\s\S]*\]/);
-        if (match) {
-          const jsonStr = match[0].replace(/\\'/g, "'");
-          posts = JSON.parse(jsonStr);
-        }
-      } catch(e) { posts = null; }
+      if (!data.posts && !data.raw) throw new Error('Keine Antwort. Bitte nochmal versuchen.');
+      const posts = data.posts;
+      const raw = data.raw || '';
 
       document.getElementById('loading-state').style.display = 'none';
       document.getElementById('content-output').style.display = 'block';

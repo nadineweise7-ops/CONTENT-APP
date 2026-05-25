@@ -61,13 +61,22 @@ exports.handler = async function(event, context) {
       req.end();
     });
 
+    const raw = (data.content || []).map(b => b.text || '').join('');
+    const match = raw.match(/\[[\s\S]*\]/);
+    let posts = null;
+    if (match) {
+      try {
+        const cleaned = match[0].replace(/"((?:[^"\\]|\\.)*)"/g, (m, g) =>
+          '"' + g.replace(/\n/g, '\\n').replace(/\r/g, '').replace(/'/g, "'") + '"'
+        );
+        posts = JSON.parse(cleaned);
+      } catch(e) { posts = null; }
+    }
+
     return {
       statusCode: 200,
-      headers: {
-        'Content-Type': 'application/json',
-        'Access-Control-Allow-Origin': '*'
-      },
-      body: JSON.stringify(data)
+      headers: { 'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*' },
+      body: JSON.stringify({ posts, raw })
     };
 
   } catch (err) {
