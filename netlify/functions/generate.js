@@ -31,7 +31,7 @@ exports.handler = async function(event, context) {
     const body = JSON.parse(event.body);
 
     const postData = JSON.stringify({
-      model: 'claude-3-haiku-20240307',
+      model: 'claude-haiku-4-5-20251001',
       max_tokens: 1200,
       system: body.system,
       messages: body.messages
