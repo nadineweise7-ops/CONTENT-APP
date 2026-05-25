@@ -426,8 +426,8 @@
     <div id="content-output" style="display:none;">
       <div class="panel-header">
         <div class="panel-eyebrow">Dein Content · Fertig zum Posten</div>
-        <div class="panel-title">3 Instagram-Designs</div>
-        <div class="panel-desc">In deinen Brand-Farben. Design herunterladen, Caption kopieren — fertig.</div>
+        <div class="panel-title">Content für die ganze Woche</div>
+        <div class="panel-desc">5 Posts — Mo bis Fr — in deinen Brand-Farben. Werden nacheinander erstellt.</div>
       </div>
       <div class="profile-summary">
         <div><div class="profile-item-label">Brand</div><div class="profile-item-value" id="sum-brand">–</div></div>
@@ -620,7 +620,7 @@
     unsicher: 'Die Unsichere: Sanft anfangen, Vertrauen aufbauen. Klare kleine Schritte.'
   };
 
-  function buildDesignHTML(post, idx, brand, handle) {
+  function buildDesignHTML(post, idx, brand, handle, tag) {
     const hookSafe = (post.hook || '').replace(/</g,'&lt;').replace(/>/g,'&gt;');
     const captionEsc = (post.caption || '').replace(/\\/g,'\\\\').replace(/`/g,'\\`');
     const hookEsc = (post.hook || '').replace(/\\/g,'\\\\').replace(/`/g,'\\`');
@@ -628,6 +628,7 @@
       ? "font-family:'Playfair Display',serif; font-weight:700;"
       : "font-family:'DM Sans',sans-serif; font-weight:900; letter-spacing:-0.5px;";
     const saeuleName = (post.saeule || 'Content').replace(/'/g,'');
+    const dayLabel = tag ? tag + ' · ' : '';
 
     let innerHtml = '';
     if (brandTemplate === 'bold') {
@@ -651,7 +652,7 @@
     return `
       <div class="output-card">
         <div class="output-header">
-          <div class="output-title">${post.saeule || 'Content'}</div>
+          <div class="output-title">${dayLabel}${post.saeule || 'Content'}</div>
           <div class="output-tag">${post.format || 'Carousel'}</div>
         </div>
         <div class="output-body">
@@ -695,63 +696,61 @@
     document.getElementById('sum-audience').textContent = audience || '–';
     document.getElementById('sum-tone').textContent = tone;
 
+    const weekPlan = [
+      { tag: 'Montag',     saeule: 'Desire',           format: 'Carousel' },
+      { tag: 'Dienstag',   saeule: 'Problem-Solution', format: 'Carousel' },
+      { tag: 'Mittwoch',   saeule: 'Desire',           format: 'Carousel' },
+      { tag: 'Donnerstag', saeule: 'Social Proof',     format: 'Reel'     },
+      { tag: 'Freitag',    saeule: 'Authority',        format: 'Reel'     }
+    ];
+
     const systemPrompt = `Du bist ein erfahrener Social-Media-Experte für Instagram im DACH-Raum. Du schreibst auf Deutsch. Stil: direkt, empowernd, von Frau zu Frau. Keine Bindestriche als Aufzählungszeichen. Immer ganze Sätze. Kein generisches Wording. Echt, direkt, emotional präzise.`;
 
-    const userPrompt = `Erstelle für folgendes Profil DREI fertige Instagram-Posts:
+    const baseContext = `Brand: ${brand} | Handle: ${handle} | Angebot: ${offer} | Positionierung: ${positioning} | Zielgruppe: ${audience} | Schmerz: ${pain} | Wunsch: ${desire} | Tonalität: ${tone} | Käufertyp: ${buyerInstructions[selectedBuyer] || 'Allgemein empowernd'}`;
 
-Brand: ${brand}
-Handle: ${handle}
-Angebot: ${offer}
-Positionierung: ${positioning}
-Zielgruppe: ${audience}
-Schmerz: ${pain}
-Wunsch: ${desire}
-Tonalität: ${tone}
-Käufertyp: ${buyerInstructions[selectedBuyer] || 'Allgemein empowernd'}
+    document.getElementById('loading-state').style.display = 'none';
+    document.getElementById('content-output').style.display = 'block';
+    const container = document.getElementById('generated-content');
+    container.innerHTML = '';
 
-Erstelle genau 3 Posts aus verschiedenen Säulen (Desire, Problem-Solution, Authority). Für jeden Post:
-- saeule: Name der Säule
-- format: Carousel oder Reel
-- hook: 1-2 Zeilen die sofort stoppen. Kein generischer Opener.
-- caption: 150-250 Wörter, Emojis, klarer CTA
-- canva: 1 Satz zum visuellen Element
+    for (let i = 0; i < weekPlan.length; i++) {
+      const plan = weekPlan[i];
 
-Antworte NUR als JSON-Array ohne Codeblöcke, ohne Backslash vor Apostrophen: [{"saeule":"...","format":"...","hook":"...","caption":"...","canva":"..."}]`;
+      // Platzhalter-Karte mit Ladeanimation
+      const placeholder = document.createElement('div');
+      placeholder.id = `placeholder-${i}`;
+      placeholder.className = 'output-card';
+      placeholder.innerHTML = `<div class="output-header"><div class="output-title">${plan.tag} · ${plan.saeule}</div><div class="output-tag">${plan.format}</div></div><div class="output-body"><div class="loading-state" style="padding:30px 20px;"><div class="loader"></div><div class="loading-text">Wird erstellt...</div></div></div>`;
+      container.appendChild(placeholder);
 
-    try {
-      const response = await fetch('/api/generate', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ system: systemPrompt, messages: [{ role: 'user', content: userPrompt }] })
-      });
+      try {
+        const userPrompt = `Erstelle EINEN Instagram-Post für ${plan.tag}:
+${baseContext}
+Säule: ${plan.saeule} | Format: ${plan.format}
+hook: 1-2 Zeilen die sofort stoppen
+caption: 150-200 Wörter, Emojis, klarer CTA`;
 
-      const responseText = await response.text();
-      let data;
-      try { data = JSON.parse(responseText); } catch(e) { throw new Error('Server-Fehler: ' + responseText.substring(0, 200)); }
-      if (data.error) throw new Error('API Fehler: ' + (data.error.message || data.error));
+        const response = await fetch('/api/generate', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ system: systemPrompt, messages: [{ role: 'user', content: userPrompt }] })
+        });
 
-      const posts = data.posts;
-      const raw = data.raw || '';
+        const data = await response.json();
+        if (data.error) throw new Error(data.error.message || data.error);
 
-      document.getElementById('loading-state').style.display = 'none';
-      document.getElementById('content-output').style.display = 'block';
-
-      const container = document.getElementById('generated-content');
-      container.innerHTML = '';
-
-      if (!posts || !Array.isArray(posts) || posts.length === 0) {
-        container.innerHTML = `<div class="output-card"><div class="output-body"><div class="content-block"><div class="content-block-label">Antwort</div><div class="content-text">${raw}</div></div></div></div>`;
-        return;
+        const post = data.post;
+        if (post) {
+          post.tag = plan.tag;
+          post.saeule = post.saeule || plan.saeule;
+          post.format = post.format || plan.format;
+          const card = document.createElement('div');
+          card.innerHTML = buildDesignHTML(post, i, brand, handle, plan.tag);
+          placeholder.replaceWith(card.firstElementChild);
+        }
+      } catch(err) {
+        placeholder.innerHTML = `<div class="output-header"><div class="output-title">${plan.tag} · ${plan.saeule}</div></div><div class="output-body"><div class="content-block"><div class="content-block-label">Fehler</div><div class="content-text">${err.message}</div></div></div>`;
       }
-
-      posts.forEach((post, idx) => {
-        container.innerHTML += buildDesignHTML(post, idx, brand, handle);
-      });
-
-    } catch(err) {
-      document.getElementById('loading-state').style.display = 'none';
-      document.getElementById('content-output').style.display = 'block';
-      document.getElementById('generated-content').innerHTML = `<div class="output-card"><div class="output-body"><div class="content-block"><div class="content-block-label">Fehler</div><div class="content-text">${err.message}</div></div></div></div>`;
     }
   }
 

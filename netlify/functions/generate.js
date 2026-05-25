@@ -17,30 +17,21 @@ exports.handler = async function(event, context) {
       max_tokens: 2000,
       system: body.system,
       tools: [{
-        name: 'instagram_posts',
-        description: 'Gibt 3 fertige Instagram-Posts zurück',
+        name: 'instagram_post',
+        description: 'Gibt einen fertigen Instagram-Post zurück',
         input_schema: {
           type: 'object',
           properties: {
-            posts: {
-              type: 'array',
-              items: {
-                type: 'object',
-                properties: {
-                  saeule:  { type: 'string' },
-                  format:  { type: 'string' },
-                  hook:    { type: 'string' },
-                  caption: { type: 'string' },
-                  canva:   { type: 'string' }
-                },
-                required: ['saeule','format','hook','caption','canva']
-              }
-            }
+            saeule:  { type: 'string' },
+            format:  { type: 'string' },
+            hook:    { type: 'string' },
+            caption: { type: 'string' },
+            canva:   { type: 'string' }
           },
-          required: ['posts']
+          required: ['saeule','format','hook','caption','canva']
         }
       }],
-      tool_choice: { type: 'tool', name: 'instagram_posts' },
+      tool_choice: { type: 'tool', name: 'instagram_post' },
       messages: body.messages
     });
 
@@ -70,12 +61,12 @@ exports.handler = async function(event, context) {
 
     // Tool Use gibt garantiert valides JSON zurück
     const toolBlock = (data.content || []).find(b => b.type === 'tool_use');
-    const posts = toolBlock ? toolBlock.input.posts : null;
+    const post = toolBlock ? toolBlock.input : null;
 
     return {
       statusCode: 200,
       headers: { 'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*' },
-      body: JSON.stringify({ posts })
+      body: JSON.stringify({ post })
     };
 
   } catch (err) {
