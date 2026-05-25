@@ -502,6 +502,7 @@
   function buildDesignHTML(post, idx, brand, handle) {
     const hookSafe = (post.hook || '').replace(/</g,'&lt;').replace(/>/g,'&gt;');
     const captionEsc = (post.caption || '').replace(/\\/g,'\\\\').replace(/`/g,'\\`');
+    const hookEsc = (post.hook || '').replace(/\\/g,'\\\\').replace(/`/g,'\\`');
     const fontStyle = brandFont === 'serif'
       ? "font-family:'Playfair Display',serif; font-weight:700;"
       : "font-family:'DM Sans',sans-serif; font-weight:900; letter-spacing:-0.5px;";
