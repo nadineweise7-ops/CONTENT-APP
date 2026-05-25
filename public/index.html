@@ -144,15 +144,40 @@
   @keyframes spin { to { transform: rotate(360deg); } }
   .loading-text { color: var(--text-light); font-size: 15px; }
 
-  .canva-btn {
-    display: flex; align-items: center; justify-content: center; gap: 10px;
-    width: 100%; background: linear-gradient(135deg, #7D2AE8, #5B21B6);
-    color: white; border: none; border-radius: 8px; padding: 16px;
-    font-family: 'DM Sans', sans-serif; font-size: 14px; font-weight: 600;
-    cursor: pointer; margin-top: 16px; transition: all 0.2s;
-    letter-spacing: 0.5px; text-transform: uppercase;
+  .insta-preview {
+    width: 100%; max-width: 420px; aspect-ratio: 1 / 1;
+    margin: 0 auto 12px; background: var(--dark); border-radius: 16px;
+    display: flex; flex-direction: column; align-items: center;
+    justify-content: center; padding: 40px; text-align: center;
+    position: relative; overflow: hidden;
   }
-  .canva-btn:hover { transform: translateY(-2px); box-shadow: 0 8px 24px rgba(125,42,232,0.35); }
+  .insta-preview::before {
+    content: ''; position: absolute; top: 0; left: 0; right: 0;
+    height: 3px; background: linear-gradient(90deg, var(--gold), var(--mint), var(--rose));
+  }
+  .insta-brand {
+    position: absolute; top: 20px; left: 24px;
+    font-size: 11px; letter-spacing: 2px; text-transform: uppercase;
+    color: var(--gold); font-weight: 600;
+  }
+  .insta-hook {
+    font-family: 'Playfair Display', serif; font-size: 22px;
+    color: var(--cream); line-height: 1.45; font-weight: 700;
+  }
+  .insta-pillar {
+    position: absolute; bottom: 20px; right: 24px;
+    font-size: 10px; letter-spacing: 2px; text-transform: uppercase;
+    color: var(--gold-light); opacity: 0.7;
+  }
+  .download-btn {
+    display: flex; align-items: center; justify-content: center; gap: 8px;
+    width: 100%; max-width: 420px; margin: 0 auto 20px;
+    background: var(--gold); color: var(--dark); border: none;
+    border-radius: 8px; padding: 14px; font-family: 'DM Sans', sans-serif;
+    font-size: 13px; font-weight: 700; cursor: pointer;
+    letter-spacing: 1px; text-transform: uppercase; transition: all 0.2s;
+  }
+  .download-btn:hover { background: var(--dark); color: var(--gold); }
 
   .canva-toast {
     position: fixed; bottom: 32px; left: 50%; transform: translateX(-50%);
@@ -170,6 +195,7 @@
     .step-btn { flex: 0 0 50%; }
   }
 </style>
+<script src="https://html2canvas.hertzen.com/dist/html2canvas.min.js"></script>
 </head>
 <body>
 
@@ -502,35 +528,29 @@ Antworte NUR als reines JSON-Array. Kein Markdown, keine Code-Blöcke, keine Bac
         return;
       }
 
-      posts.forEach((post) => {
+      posts.forEach((post, idx) => {
         const card = document.createElement('div');
         card.className = 'output-card';
-        const hookEsc = (post.hook||'').replace(/\\/g,'\\\\').replace(/`/g,'\\`');
         const captionEsc = (post.caption||'').replace(/\\/g,'\\\\').replace(/`/g,'\\`');
-        const fmt = (post.format || 'Carousel').replace(/'/g, '');
         card.innerHTML = `
           <div class="output-header">
             <div class="output-title">${post.saeule || 'Content'}</div>
             <div class="output-tag">${post.format || 'Carousel'}</div>
           </div>
           <div class="output-body">
-            <div class="content-block" style="border-left:3px solid var(--gold);">
-              <div class="content-block-label">Hook · Erste Zeilen</div>
-              <div class="content-text">${post.hook || ''}</div>
-              <button class="copy-btn" onclick="copyText(this, \`${hookEsc}\`)">Kopieren</button>
+            <div class="insta-preview" id="preview-${idx}">
+              <div class="insta-brand">${brand}</div>
+              <div class="insta-hook">${post.hook || ''}</div>
+              <div class="insta-pillar">${post.saeule || ''} · ${post.format || ''}</div>
             </div>
+            <button class="download-btn" onclick="downloadDesign(${idx}, '${(post.saeule||'post').replace(/'/g,'')}')">
+              ⬇ Design als Bild herunterladen
+            </button>
             <div class="content-block">
               <div class="content-block-label">Caption · Vollständiger Post-Text</div>
               <div class="content-text">${post.caption || ''}</div>
               <button class="copy-btn" onclick="copyText(this, \`${captionEsc}\`)">Kopieren</button>
             </div>
-            <div class="content-block" style="background:var(--dark);">
-              <div class="content-block-label" style="color:var(--gold);">🎨 Canva-Hinweis</div>
-              <div class="content-text" style="color:var(--cream);">${post.canva || ''}</div>
-            </div>
-            <button class="canva-btn" onclick="openInCanva('${fmt}', \`${hookEsc}\`, \`${captionEsc}\`)">
-              🎨 Text kopieren &amp; in Canva öffnen
-            </button>
           </div>`;
         container.appendChild(card);
       });
@@ -543,6 +563,23 @@ Antworte NUR als reines JSON-Array. Kein Markdown, keine Code-Blöcke, keine Bac
           <div class="content-block-label">Verbindungsfehler</div>
           <div class="content-text">Content konnte nicht generiert werden.\n\n${err.message}</div>
         </div></div></div>`;
+    }
+  }
+
+  async function downloadDesign(idx, name) {
+    const el = document.getElementById('preview-' + idx);
+    const btn = el.nextElementSibling;
+    btn.textContent = '⏳ Wird erstellt...';
+    try {
+      const canvas = await html2canvas(el, { scale: 3, useCORS: true, backgroundColor: '#1A1410' });
+      const link = document.createElement('a');
+      link.download = (name || 'post') + '.png';
+      link.href = canvas.toDataURL('image/png');
+      link.click();
+      btn.textContent = '✓ Gespeichert!';
+      setTimeout(() => btn.textContent = '⬇ Design als Bild herunterladen', 2000);
+    } catch(e) {
+      btn.textContent = '⬇ Design als Bild herunterladen';
     }
   }
 
