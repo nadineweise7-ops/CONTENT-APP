@@ -144,6 +144,25 @@
   @keyframes spin { to { transform: rotate(360deg); } }
   .loading-text { color: var(--text-light); font-size: 15px; }
 
+  .canva-btn {
+    display: flex; align-items: center; justify-content: center; gap: 10px;
+    width: 100%; background: linear-gradient(135deg, #7D2AE8, #5B21B6);
+    color: white; border: none; border-radius: 8px; padding: 16px;
+    font-family: 'DM Sans', sans-serif; font-size: 14px; font-weight: 600;
+    cursor: pointer; margin-top: 16px; transition: all 0.2s;
+    letter-spacing: 0.5px; text-transform: uppercase;
+  }
+  .canva-btn:hover { transform: translateY(-2px); box-shadow: 0 8px 24px rgba(125,42,232,0.35); }
+
+  .canva-toast {
+    position: fixed; bottom: 32px; left: 50%; transform: translateX(-50%);
+    background: var(--dark); color: var(--cream); padding: 14px 28px;
+    border-radius: 8px; font-size: 14px; font-weight: 500;
+    box-shadow: var(--shadow-lg); z-index: 1000;
+    opacity: 0; transition: opacity 0.3s; pointer-events: none;
+  }
+  .canva-toast.show { opacity: 1; }
+
   @media (max-width: 700px) {
     .form-grid, .buyer-types-grid, .pillars-grid, .week-grid, .profile-summary { grid-template-columns: 1fr; }
     .app-container { padding: 24px 16px 60px; }
@@ -478,6 +497,7 @@ Antworte NUR als reines JSON-Array ohne Markdown-Codeblocks: [{saeule, format, h
         card.className = 'output-card';
         const hookEsc = (post.hook||'').replace(/\\/g,'\\\\').replace(/`/g,'\\`');
         const captionEsc = (post.caption||'').replace(/\\/g,'\\\\').replace(/`/g,'\\`');
+        const fmt = (post.format || 'Carousel').replace(/'/g, '');
         card.innerHTML = `
           <div class="output-header">
             <div class="output-title">${post.saeule || 'Content'}</div>
@@ -498,6 +518,9 @@ Antworte NUR als reines JSON-Array ohne Markdown-Codeblocks: [{saeule, format, h
               <div class="content-block-label" style="color:var(--gold);">🎨 Canva-Hinweis</div>
               <div class="content-text" style="color:var(--cream);">${post.canva || ''}</div>
             </div>
+            <button class="canva-btn" onclick="openInCanva('${fmt}', \`${hookEsc}\`, \`${captionEsc}\`)">
+              🎨 Text kopieren &amp; in Canva öffnen
+            </button>
           </div>`;
         container.appendChild(card);
       });
@@ -519,6 +542,27 @@ Antworte NUR als reines JSON-Array ohne Markdown-Codeblocks: [{saeule, format, h
       setTimeout(() => btn.textContent = 'Kopieren', 2000);
     });
   }
+
+  function openInCanva(format, hook, caption) {
+    const fullText = hook + '\n\n' + caption;
+    navigator.clipboard.writeText(fullText).then(() => {
+      showToast('✓ Text kopiert! Canva öffnet sich...');
+      const query = format === 'Reel' ? 'instagram+reel' : 'instagram+carousel';
+      setTimeout(() => {
+        window.open('https://www.canva.com/templates/?query=' + query, '_blank');
+      }, 700);
+    });
+  }
+
+  function showToast(msg) {
+    const toast = document.getElementById('canva-toast');
+    toast.textContent = msg;
+    toast.classList.add('show');
+    setTimeout(() => toast.classList.remove('show'), 3000);
+  }
 </script>
+
+<div id="canva-toast" class="canva-toast"></div>
+
 </body>
 </html>
