@@ -6,7 +6,7 @@
   node_bundler = "esbuild"
 
 [functions.generate]
-  timeout = 60
+  timeout = 120
 
 [[redirects]]
   from = "/api/*"
