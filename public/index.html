@@ -462,7 +462,7 @@ Erstelle genau 3 Posts — jeder aus einer anderen Säule (Desire, Problem-Solut
 4. caption: Vollständiger Instagram-Post-Text, 150-250 Wörter, mit passenden Emojis, 1 klarer CTA am Ende
 5. canva: 1 konkreter Satz was das visuelle Element dieses Posts ist
 
-Antworte NUR als reines JSON-Array ohne Markdown-Codeblocks: [{saeule, format, hook, caption, canva}, ...]`;
+Antworte NUR als reines JSON-Array. Kein Markdown, keine Code-Blöcke, keine Backslashes vor Apostrophen. Nur das Array: [{saeule, format, hook, caption, canva}, ...]`;
 
     try {
       const response = await fetch('/api/generate', {
@@ -481,7 +481,11 @@ Antworte NUR als reines JSON-Array ohne Markdown-Codeblocks: [{saeule, format, h
       if (data.error) throw new Error('API Fehler: ' + (data.error.message || data.error));
       const raw = data.content?.map(b => b.text || '').join('') || '';
       if (!raw) throw new Error('Keine Antwort vom Server. Bitte nochmal versuchen.');
-      const clean = raw.replace(/```json|```/g, '').trim();
+      const clean = raw
+        .replace(/```json\n?/g, '')
+        .replace(/```/g, '')
+        .replace(/\\'/g, "'")
+        .trim();
 
       let posts;
       try { posts = JSON.parse(clean); } catch { posts = null; }
